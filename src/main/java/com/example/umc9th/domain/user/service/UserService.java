@@ -28,4 +28,10 @@ public class UserService {
 
         log.info("회원 탈퇴 완료: userId = {}", userId);
     }
+
+    public User getMyPageInfo(Long userId) {
+
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new GeneralException(UserErrorCode.USER_NOT_FOUND));
+    }
 }
