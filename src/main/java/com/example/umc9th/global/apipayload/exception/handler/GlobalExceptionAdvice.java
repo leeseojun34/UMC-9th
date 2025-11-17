@@ -6,8 +6,12 @@ import com.example.umc9th.global.apipayload.code.GeneralErrorCode;
 import com.example.umc9th.global.apipayload.exception.GeneralException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -25,6 +29,26 @@ public class GlobalExceptionAdvice {
             .status(ex.getCode().getStatus())
             .body(errorResponse);
     }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleMethodArgumentNotValidException(
+        MethodArgumentNotValidException ex
+    ) {
+        log.warn("[ MethodArgumentNotValidException ]: Validation failed");
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+            errors.put(error.getField(), error.getDefaultMessage())
+        );
+
+        BaseErrorCode errorCode = GeneralErrorCode.BAD_REQUEST_400;
+        ApiResponse<Map<String, String>> errorResponse = ApiResponse.onFailure(errorCode, errors);
+
+        return ResponseEntity
+            .status(errorCode.getStatus())
+            .body(errorResponse);
+    }
+
 
     // 그 외의 정의되지 않은 모든 예외 처리
     @ExceptionHandler({Exception.class})
