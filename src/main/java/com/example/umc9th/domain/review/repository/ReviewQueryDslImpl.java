@@ -1,7 +1,7 @@
 package com.example.umc9th.domain.review.repository;
 
 import com.example.umc9th.domain.restaurant.entity.QRestaurant;
-import com.example.umc9th.domain.review.dto.MyReviewResponseDTO;
+import com.example.umc9th.domain.review.dto.response.MyReviewResponseDTO;
 import com.example.umc9th.domain.review.entity.QReview;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;

@@ -1,4 +1,4 @@
-package com.example.umc9th.domain.review.dto;
+package com.example.umc9th.domain.review.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
