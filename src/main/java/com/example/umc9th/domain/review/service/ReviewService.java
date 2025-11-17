@@ -2,12 +2,22 @@ package com.example.umc9th.domain.review.service;
 
 import com.example.umc9th.domain.restaurant.entity.QRestaurant;
 import com.example.umc9th.domain.restaurant.entity.Restaurant;
-import com.example.umc9th.domain.review.dto.MyReviewRequestDTO;
-import com.example.umc9th.domain.review.dto.MyReviewResponseDTO;
+import com.example.umc9th.domain.restaurant.exception.RestaurantErrorCode;
+import com.example.umc9th.domain.restaurant.exception.RestaurantException;
+import com.example.umc9th.domain.restaurant.repository.RestaurantRepository;
+import com.example.umc9th.domain.review.dto.request.MyReviewRequestDTO;
+import com.example.umc9th.domain.review.dto.request.ReviewRequestDTO;
+import com.example.umc9th.domain.review.dto.response.MyReviewResponseDTO;
+import com.example.umc9th.domain.review.dto.response.ReviewResponseDTO;
 import com.example.umc9th.domain.review.entity.QReview;
 import com.example.umc9th.domain.review.entity.Review;
+import com.example.umc9th.domain.review.entity.ReviewImage;
+import com.example.umc9th.domain.review.repository.ReviewImageRepository;
 import com.example.umc9th.domain.review.repository.ReviewRepository;
 import com.example.umc9th.domain.user.entity.User;
+import com.example.umc9th.domain.user.exception.UserErrorCode;
+import com.example.umc9th.domain.user.exception.UserException;
+import com.example.umc9th.domain.user.repository.UserRepository;
 import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,34 +31,66 @@ import java.util.List;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final ReviewImageRepository reviewImageRepository;
+    private final UserRepository userRepository;
+    private final RestaurantRepository restaurantRepository;
 
     @Transactional
-    public Review createReview(User user, Restaurant restaurant, String content, Float rating) {
+    public ReviewResponseDTO.CreateReviewResultDTO createReview(
+        Long userId,
+        ReviewRequestDTO.CreateReviewDTO request
+    ) {
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        // 가게 조회
+        Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
+            .orElseThrow(() -> new RestaurantException(RestaurantErrorCode.RESTAURANT_NOT_FOUND));
+
+        // 리뷰 생성
         Review review = Review.builder()
             .user(user)
             .restaurant(restaurant)
-            .content(content)
-            .rating(rating)
+            .content(request.getContent())
+            .rating(request.getRating().floatValue())
             .build();
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        // 리뷰 이미지 저장
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            List<ReviewImage> reviewImages = request.getImageUrls().stream()
+                .map(url -> ReviewImage.builder()
+                    .review(savedReview)
+                    .url(url)
+                    .build())
+                .toList();
+
+            reviewImageRepository.saveAll(reviewImages);
+        }
+
+        // 응답 생성
+        return ReviewResponseDTO.CreateReviewResultDTO.builder()
+            .reviewId(savedReview.getId())
+            .build();
     }
 
     @Transactional(readOnly = true)
     public List<MyReviewResponseDTO> getMyReviews(
-            Long userId, 
-            String restaurantName, 
-            Integer rating, 
-            String filterType
+        Long userId,
+        String restaurantName,
+        Integer rating,
+        String filterType
     ) {
         MyReviewRequestDTO requestDTO = new MyReviewRequestDTO();
         requestDTO.setRestaurantName(restaurantName);
         requestDTO.setRating(rating);
         requestDTO.setFilterType(filterType);
-        
+
         QReview review = QReview.review;
         QRestaurant restaurant = QRestaurant.restaurant;
-        
+
         BooleanBuilder builder = new BooleanBuilder();
 
         // 식당 이름 필터링
@@ -59,7 +101,7 @@ public class ReviewService {
         else if ("rating".equals(filterType) && requestDTO.getRating() != null) {
             Integer ratingValue = requestDTO.getRating();
             builder.and(review.rating.goe(ratingValue.floatValue()))
-                   .and(review.rating.lt((ratingValue + 1)));
+                .and(review.rating.lt((ratingValue + 1)));
         }
         // 식당 이름 + 별점 필터링
         else if ("both".equals(filterType)) {
@@ -69,11 +111,11 @@ public class ReviewService {
             if (requestDTO.getRating() != null) {
                 Integer ratingValue = requestDTO.getRating();
                 builder.and(review.rating.goe(ratingValue.floatValue()))
-                       .and(review.rating.lt((ratingValue + 1)));
+                    .and(review.rating.lt((ratingValue + 1)));
             }
         }
         // 필터링이 없을 경우 모든 리뷰 조회
-        
+
         return reviewRepository.findMyReviews(userId, builder);
     }
 }
