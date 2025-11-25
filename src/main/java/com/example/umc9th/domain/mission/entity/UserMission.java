@@ -32,4 +32,8 @@ public class UserMission extends BaseEntity {
     // Optimistic Locking을 위한 버전 필드
     @Version
     private Long version;
+
+    public void completeStatus() {
+        this.status = MissionStatus.COMPLETED;
+    }
 }

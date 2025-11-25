@@ -1,7 +1,11 @@
 package com.example.umc9th.domain.mission.service;
 
+import com.example.umc9th.domain.mission.converter.MissionConverter;
 import com.example.umc9th.domain.mission.dto.MissionRequestDTO;
 import com.example.umc9th.domain.mission.dto.MissionResponseDTO;
+import com.example.umc9th.domain.mission.dto.response.MissionPreViewListDTO;
+import com.example.umc9th.domain.mission.dto.response.UserMissionListResponseDTO;
+import com.example.umc9th.domain.mission.dto.response.UserMissionPreViewListDTO;
 import com.example.umc9th.domain.mission.entity.Mission;
 import com.example.umc9th.domain.mission.entity.UserMission;
 import com.example.umc9th.domain.mission.enums.MissionStatus;
@@ -18,6 +22,8 @@ import com.example.umc9th.domain.user.exception.UserErrorCode;
 import com.example.umc9th.domain.user.exception.UserException;
 import com.example.umc9th.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,9 +77,51 @@ public class MissionService {
 
         UserMission savedUserMission = userMissionRepository.save(userMission);
 
-        // 응답 생성
         return MissionResponseDTO.ChallengeMissionResultDTO.builder()
             .userMissionId(savedUserMission.getId())
             .build();
+    }
+
+    @Transactional(readOnly = true)
+    public MissionPreViewListDTO getStoreMissionList(
+        Long restaurantId,
+        Integer page
+    ) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+            .orElseThrow(() -> new RestaurantException(RestaurantErrorCode.RESTAURANT_NOT_FOUND));
+
+        Page<Mission> missionPage = missionRepository.findAllByRestaurant(restaurant,
+            PageRequest.of(page - 1, 10));
+        return MissionConverter.toMissionPreViewListDTO(missionPage);
+    }
+
+    @Transactional(readOnly = true)
+    public UserMissionPreViewListDTO getMyOngoingMissionList(
+        Long userId,
+        Integer page
+    ) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        Page<UserMission> userMissionPage = userMissionRepository.findAllByUserAndStatus(user,
+            MissionStatus.IN_PROGRESS,
+            PageRequest.of(page - 1, 10));
+        return MissionConverter.toUserMissionPreViewListDTO(userMissionPage);
+    }
+
+    @Transactional
+    public UserMissionListResponseDTO completeMission(Long userId, Long missionId) {
+        // 사용자 확인
+        userRepository.findById(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        // 진행중인 미션 조회
+        UserMission userMission = userMissionRepository
+            .findByMissionIdAndUserIdAndStatus(missionId, userId, MissionStatus.IN_PROGRESS)
+            .orElseThrow(() -> new MissionException(MissionErrorCode.USER_MISSION_NOT_FOUND));
+
+        userMission.completeStatus();
+
+        return MissionConverter.toUserMissionListResponseDTO(userMission);
     }
 }

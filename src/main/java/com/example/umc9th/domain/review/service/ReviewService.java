@@ -8,6 +8,7 @@ import com.example.umc9th.domain.restaurant.repository.RestaurantRepository;
 import com.example.umc9th.domain.review.dto.request.MyReviewRequestDTO;
 import com.example.umc9th.domain.review.dto.request.ReviewRequestDTO;
 import com.example.umc9th.domain.review.dto.response.MyReviewResponseDTO;
+import com.example.umc9th.domain.review.dto.response.ReviewPreViewListDTO;
 import com.example.umc9th.domain.review.dto.response.ReviewResponseDTO;
 import com.example.umc9th.domain.review.entity.QReview;
 import com.example.umc9th.domain.review.entity.Review;
@@ -20,6 +21,8 @@ import com.example.umc9th.domain.user.exception.UserException;
 import com.example.umc9th.domain.user.repository.UserRepository;
 import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +41,7 @@ public class ReviewService {
     @Transactional
     public ReviewResponseDTO.CreateReviewResultDTO createReview(
         Long userId,
-        ReviewRequestDTO.CreateReviewDTO request
-    ) {
+        ReviewRequestDTO.CreateReviewDTO request) {
         // 사용자 조회
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
@@ -81,8 +83,7 @@ public class ReviewService {
         Long userId,
         String restaurantName,
         Integer rating,
-        String filterType
-    ) {
+        String filterType) {
         MyReviewRequestDTO requestDTO = new MyReviewRequestDTO();
         requestDTO.setRestaurantName(restaurantName);
         requestDTO.setRating(rating);
@@ -117,5 +118,14 @@ public class ReviewService {
         // 필터링이 없을 경우 모든 리뷰 조회
 
         return reviewRepository.findMyReviews(userId, builder);
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewPreViewListDTO getMyReviewList(Long userId, Integer page) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        Page<Review> reviewPage = reviewRepository.findAllByUser(user, PageRequest.of(page - 1, 10));
+        return com.example.umc9th.domain.review.converter.ReviewConverter.toReviewPreViewListDTO(reviewPage);
     }
 }

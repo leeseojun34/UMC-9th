@@ -4,6 +4,7 @@ import com.example.umc9th.global.apipayload.ApiResponse;
 import com.example.umc9th.global.apipayload.code.BaseErrorCode;
 import com.example.umc9th.global.apipayload.code.GeneralErrorCode;
 import com.example.umc9th.global.apipayload.exception.GeneralException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,9 +19,7 @@ import java.util.Map;
 public class GlobalExceptionAdvice {
 
     @ExceptionHandler(GeneralException.class)
-    public ResponseEntity<ApiResponse<Object>> handleCustomException(
-        GeneralException ex
-    ) {
+    public ResponseEntity<ApiResponse<Object>> handleCustomException(GeneralException ex) {
         log.warn("[ CustomException ]: {}", ex.getCode().getMessage());
         // 커스텀 예외에 정의된 에러 코드와 메시지를 포함한 응답 제공
         // onFailure 메서드에 null을 전달하여 데이터 부분이 없음을 명시
@@ -37,9 +36,8 @@ public class GlobalExceptionAdvice {
         log.warn("[ MethodArgumentNotValidException ]: Validation failed");
 
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-            errors.put(error.getField(), error.getDefaultMessage())
-        );
+        ex.getBindingResult().getFieldErrors()
+            .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
         BaseErrorCode errorCode = GeneralErrorCode.BAD_REQUEST_400;
         ApiResponse<Map<String, String>> errorResponse = ApiResponse.onFailure(errorCode, errors);
@@ -48,7 +46,6 @@ public class GlobalExceptionAdvice {
             .status(errorCode.getStatus())
             .body(errorResponse);
     }
-
 
     // 그 외의 정의되지 않은 모든 예외 처리
     @ExceptionHandler({Exception.class})
@@ -62,5 +59,15 @@ public class GlobalExceptionAdvice {
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(errorResponse);
+    }
+
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleConstraintViolationException(
+        ConstraintViolationException ex
+    ) {
+        log.warn("[ ConstraintViolationException ]: {}", ex.getMessage());
+        return ResponseEntity
+            .status(GeneralErrorCode.BAD_REQUEST_400.getStatus())
+            .body(ApiResponse.onFailure(GeneralErrorCode.BAD_REQUEST_400, ex.getMessage()));
     }
 }

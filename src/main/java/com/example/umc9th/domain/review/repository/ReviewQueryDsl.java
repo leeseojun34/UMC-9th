@@ -1,11 +1,9 @@
 package com.example.umc9th.domain.review.repository;
 
 import com.example.umc9th.domain.review.dto.response.MyReviewResponseDTO;
-import com.querydsl.core.types.Predicate;
-
-import java.util.List;
+import com.querydsl.core.BooleanBuilder;
 
 public interface ReviewQueryDsl {
 
-    List<MyReviewResponseDTO> findMyReviews(Long userId, Predicate predicate);
+    java.util.List<MyReviewResponseDTO> findMyReviews(Long userId, BooleanBuilder builder);
 }

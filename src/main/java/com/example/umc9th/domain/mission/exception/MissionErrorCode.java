@@ -18,6 +18,12 @@ public enum MissionErrorCode implements BaseErrorCode {
     MISSION_NOT_BELONG_TO_RESTAURANT(HttpStatus.BAD_REQUEST,
         "MISSION400_2",
         "해당 미션은 이 가게의 미션이 아닙니다."),
+    USER_MISSION_NOT_FOUND(HttpStatus.NOT_FOUND,
+        "MISSION404_2",
+        "사용자 미션을 찾을 수 없습니다."),
+    MISSION_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST,
+        "MISSION400_3",
+        "이미 완료된 미션입니다."),
     ;
 
     private final HttpStatus status;
