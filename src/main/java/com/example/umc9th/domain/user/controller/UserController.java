@@ -27,6 +27,11 @@ public class UserController {
         return ApiResponse.onSuccess(GeneralSuccessCode.OK, userService.signup(dto));
     }
 
+    @PostMapping("/login")
+    public ApiResponse<UserResponseDTO.LoginDTO> login(@RequestBody @Valid UserRequestDTO.LoginDTO dto) {
+        return ApiResponse.onSuccess(GeneralSuccessCode.OK, userService.login(dto));
+    }
+
     @Operation(
         summary = "회원 탈퇴",
         description = "회원과 관련된 모든 데이터를 삭제합니다. " +

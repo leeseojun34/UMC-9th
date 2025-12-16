@@ -25,4 +25,11 @@ public class UserConverter {
     public static UserResponseDTO.JoinResultDTO toJoinResultDTO(User user) {
         return new UserResponseDTO.JoinResultDTO(user.getId(), user.getCreatedAt());
     }
+
+    public static UserResponseDTO.LoginDTO toLoginDTO(User user, String accessToken) {
+        return UserResponseDTO.LoginDTO.builder()
+            .userId(user.getId())
+            .accessToken(accessToken)
+            .build();
+    }
 }

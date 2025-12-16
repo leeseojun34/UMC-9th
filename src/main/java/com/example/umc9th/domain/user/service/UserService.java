@@ -24,12 +24,32 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final com.example.umc9th.global.jwt.JwtUtil jwtUtil;
+
     @Transactional
     public UserResponseDTO.JoinResultDTO signup(UserRequestDTO.JoinDTO dto) {
         String encodedPassword = passwordEncoder.encode(dto.password());
         User user = UserConverter.toUser(dto, encodedPassword, Role.ROLE_USER);
         userRepository.save(user);
         return UserConverter.toJoinResultDTO(user);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDTO.LoginDTO login(UserRequestDTO.LoginDTO dto) {
+        User user = userRepository.findByEmail(dto.email())
+            .orElseThrow(() -> new GeneralException(
+                UserErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
+            throw new GeneralException(
+                UserErrorCode.PASSWORD_NOT_MATCH);
+        }
+
+        CustomUserDetails userDetails = new CustomUserDetails(
+            user);
+        String accessToken = jwtUtil.createAccessToken(userDetails);
+
+        return UserConverter.toLoginDTO(user, accessToken);
     }
 
     @Transactional

@@ -1,0 +1,30 @@
+package com.example.umc9th.global.jwt;
+
+import com.example.umc9th.global.apipayload.ApiResponse;
+import com.example.umc9th.global.apipayload.code.GeneralErrorCode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+
+import java.io.IOException;
+
+public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public void commence(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        AuthenticationException authException) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+        ApiResponse<Void> errorResponse = ApiResponse.onFailure(
+            GeneralErrorCode.UNAUTHORIZED_401,
+            null);
+
+        objectMapper.writeValue(response.getOutputStream(), errorResponse);
+    }
+}

@@ -17,7 +17,11 @@ public class UserRequestDTO {
         @NotNull Gender gender,
         @NotNull LocalDate birth,
         @NotBlank String address,
-        List<Long> preferCategory
-    ) {
+        List<Long> preferCategory) {
+    }
+
+    public record LoginDTO(
+        @NotBlank String email,
+        @NotBlank String password) {
     }
 }
