@@ -3,7 +3,7 @@ package com.example.umc9th.domain.review.repository;
 import com.example.umc9th.domain.restaurant.entity.QRestaurant;
 import com.example.umc9th.domain.review.dto.response.MyReviewResponseDTO;
 import com.example.umc9th.domain.review.entity.QReview;
-import com.querydsl.core.types.Predicate;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -19,9 +19,8 @@ public class ReviewQueryDslImpl implements ReviewQueryDsl {
     private final EntityManager em;
 
     @Override
-    public List<MyReviewResponseDTO> findMyReviews(Long userId, Predicate predicate) {
+    public List<MyReviewResponseDTO> findMyReviews(Long userId, BooleanBuilder builder) {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
-
         QReview review = QReview.review;
         QRestaurant restaurant = QRestaurant.restaurant;
 
@@ -32,14 +31,10 @@ public class ReviewQueryDslImpl implements ReviewQueryDsl {
                 restaurant.name,
                 review.content,
                 review.rating,
-                review.createdAt
-            ))
+                review.createdAt))
             .from(review)
             .leftJoin(restaurant).on(restaurant.id.eq(review.restaurant.id))
-            .where(
-                review.user.id.eq(userId),
-                predicate
-            )
+            .where(review.user.id.eq(userId).and(builder))
             .orderBy(review.createdAt.desc())
             .fetch();
     }
