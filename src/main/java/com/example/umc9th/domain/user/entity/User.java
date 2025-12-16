@@ -6,6 +6,7 @@ import com.example.umc9th.domain.mission.entity.UserMission;
 import com.example.umc9th.domain.review.entity.Review;
 import com.example.umc9th.domain.user.enums.Gender;
 import com.example.umc9th.domain.user.enums.Provider;
+import com.example.umc9th.domain.user.enums.Role;
 import com.example.umc9th.domain.user.enums.UserStatus;
 import com.example.umc9th.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -33,8 +34,14 @@ public class User extends BaseEntity {
     @Column
     private String nickname;
 
-    @Column
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @Enumerated(EnumType.STRING)
     @Column
